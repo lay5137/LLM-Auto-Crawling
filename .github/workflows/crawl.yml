@@ -1,0 +1,26 @@
+name: Auto Crawl SW Notice
+
+on:
+  schedule:
+    - cron: '0 0 * * *'   # 매일 00:00 UTC (한국 시간 오전 9시)
+  workflow_dispatch:       # 수동 실행도 가능
+
+jobs:
+  crawl:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Install dependencies
+        run: |
+          pip install selenium chromedriver-autoinstaller openpyxl
+
+      - name: Run crawler
+        run: python crawler.py
