@@ -62,7 +62,7 @@ def append_to_excel(title, writer, date, url, excel_path):
 # ===============================
 base_url = "https://swknu.kongju.ac.kr"
 board_url = f"{base_url}/community/notice.do?&pn=1"
-max_pages = 5  # 최대 페이지 수
+max_pages = 1  # 최대 페이지 수
 
 print(f"\n========== 🔍 공주대 SW중심대학 공지사항 크롤링 시작 ==========")
 
