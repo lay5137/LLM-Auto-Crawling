@@ -30,12 +30,12 @@ os.makedirs(save_base, exist_ok=True)
 
 excel_path = os.path.join(save_base, "crawl_result.xlsx")
 
-# ✅ 엑셀 파일 초기화 or 불러오기 (🔹 URL 열 추가)
+# ✅ 엑셀 파일 초기화 or 불러오기 (🔹 관련부서 컬럼으로 변경)
 if not os.path.exists(excel_path):
     wb = openpyxl.Workbook()
     ws = wb.active
     ws.title = "게시글 목록"
-    ws.append(["게시글 제목", "작성자", "작성일", "URL"])  # ✅ URL 열 추가
+    ws.append(["게시글 제목", "관련부서", "작성일", "URL"])  # ✅ 컬럼명 변경
     wb.save(excel_path)
     existing_keys = set()
 else:
@@ -43,17 +43,17 @@ else:
     ws = wb.active
     existing_keys = set()
     for row in ws.iter_rows(min_row=2, values_only=True):
-        title, writer, date, *_ = row  # ✅ URL은 무시하고 기존 키 유지
+        title, dept, date, *_ = row  # ✅ 기존 “작성자” → “관련부서”로 이름만 변경
         if title and date:
             existing_keys.add(f"{title.strip()}_{date.strip()}")
     print(f"✅ 기존 게시글 {len(existing_keys)}건 로드 완료.")
 
 
-# ✅ URL 포함하도록 수정
-def append_to_excel(title, writer, date, url, excel_path):
+# ✅ 관련부서 통일 + URL 저장
+def append_to_excel(title, dept, date, url, excel_path):
     wb = openpyxl.load_workbook(excel_path)
     ws = wb.active
-    ws.append([title, writer, date, url])  # ✅ URL 저장 추가
+    ws.append([title, dept, date, url])
     wb.save(excel_path)
 
 
@@ -84,7 +84,10 @@ while True:
             post_url = urljoin(base_url, link_elem.get_attribute("href"))
             info_elems = item.find_elements(By.CSS_SELECTOR, ".post-info span")
 
-            writer = info_elems[0].text.strip() if len(info_elems) > 0 else "정보 없음"
+            # ✅ 관련부서는 고정값으로 통일
+            dept = "공주대학교SW중심대학사업단"
+
+            # ✅ 작성일은 그대로 크롤링
             date = info_elems[1].text.strip() if len(info_elems) > 1 else "정보 없음"
 
             key = f"{title}_{date}"
@@ -119,7 +122,7 @@ while True:
 
             markdown = f"""# {title}
 
-**작성자:** {writer}  
+**관련부서:** {dept}  
 **작성일:** {date}  
 
 ---
@@ -140,8 +143,8 @@ while True:
             with open(file_path, "w", encoding="utf-8") as f:
                 f.write(markdown)
 
-            # ✅ URL 인자 추가
-            append_to_excel(title, writer, date, post_url, excel_path)
+            # ✅ 관련부서, URL 포함 저장
+            append_to_excel(title, dept, date, post_url, excel_path)
             existing_keys.add(key)
             print(f"✅ 저장 완료 → {file_path}")
 
