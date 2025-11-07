@@ -61,13 +61,13 @@ def append_to_excel(title, writer, date, url, excel_path):
 # 공주대 SW중심대학 공지사항 크롤러
 # ===============================
 base_url = "https://swknu.kongju.ac.kr"
-board_url = f"{base_url}/community/notice.do?&pn=9"
+board_url = f"{base_url}/community/notice.do?&pn=6"
 max_pages = 1  # 최대 페이지 수
 
 print(f"\n========== 🔍 공주대 SW중심대학 공지사항 크롤링 시작 ==========")
 
 driver.get(board_url)
-page_num = 1
+page_num = 4
 
 while True:
     print(f"\n📄 {page_num}페이지 처리 중... ({driver.current_url})")
