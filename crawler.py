@@ -30,12 +30,12 @@ os.makedirs(save_base, exist_ok=True)
 
 excel_path = os.path.join(save_base, "crawl_result.xlsx")
 
-# ✅ 엑셀 파일 초기화 or 불러오기
+# ✅ 엑셀 파일 초기화 or 불러오기 (🔹 URL 열 추가)
 if not os.path.exists(excel_path):
     wb = openpyxl.Workbook()
     ws = wb.active
     ws.title = "게시글 목록"
-    ws.append(["게시글 제목", "작성자", "작성일"])
+    ws.append(["게시글 제목", "작성자", "작성일", "URL"])  # ✅ URL 열 추가
     wb.save(excel_path)
     existing_keys = set()
 else:
@@ -43,16 +43,17 @@ else:
     ws = wb.active
     existing_keys = set()
     for row in ws.iter_rows(min_row=2, values_only=True):
-        title, writer, date = row
+        title, writer, date, *_ = row  # ✅ URL은 무시하고 기존 키 유지
         if title and date:
             existing_keys.add(f"{title.strip()}_{date.strip()}")
     print(f"✅ 기존 게시글 {len(existing_keys)}건 로드 완료.")
 
 
-def append_to_excel(title, writer, date, excel_path):
+# ✅ URL 포함하도록 수정
+def append_to_excel(title, writer, date, url, excel_path):
     wb = openpyxl.load_workbook(excel_path)
     ws = wb.active
-    ws.append([title, writer, date])
+    ws.append([title, writer, date, url])  # ✅ URL 저장 추가
     wb.save(excel_path)
 
 
@@ -60,7 +61,7 @@ def append_to_excel(title, writer, date, excel_path):
 # 공주대 SW중심대학 공지사항 크롤러
 # ===============================
 base_url = "https://swknu.kongju.ac.kr"
-board_url = f"{base_url}/community/notice.do"
+board_url = f"{base_url}/community/notice.do?&pn=9"
 max_pages = 1  # 최대 페이지 수
 
 print(f"\n========== 🔍 공주대 SW중심대학 공지사항 크롤링 시작 ==========")
@@ -139,7 +140,8 @@ while True:
             with open(file_path, "w", encoding="utf-8") as f:
                 f.write(markdown)
 
-            append_to_excel(title, writer, date, excel_path)
+            # ✅ URL 인자 추가
+            append_to_excel(title, writer, date, post_url, excel_path)
             existing_keys.add(key)
             print(f"✅ 저장 완료 → {file_path}")
 
