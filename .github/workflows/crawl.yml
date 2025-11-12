@@ -1,60 +1,47 @@
 name: Auto Crawl & Vector DB
 
 on:
-  push:
-    branches:
-      - main       # main 브랜치에 push 시 실행
-  workflow_dispatch: {} # 수동 실행 가능
   schedule:
-    - cron: '0 0 * * *' # 매일 00:00 UTC (한국 시간 09:00)
+    - cron: '0 0 * * *'
+  workflow_dispatch:
 
 jobs:
   crawl_vector:
     runs-on: ubuntu-latest
-
     steps:
-      #  Repo checkout
       - name: Checkout repo
         uses: actions/checkout@v4
 
-      #  Python 세팅
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.10'
 
-      #  라이브러리 설치
       - name: Install dependencies
         run: |
           pip install --upgrade pip
           pip install selenium chromedriver-autoinstaller openpyxl pandas
-          pip install openai langchain langchain-huggingface langchain-chroma
+          pip install openai
+          pip install langchain==0.0.27 \
+                      langchain-core==1.0.3 \
+                      langchain-openai==0.3.34 \
+                      langchain-huggingface==1.0.1 \
+                      langchain-text-splitters==1.0.0 \
+                      langchain-community==0.4.1 \
+                      langchain-chroma==0.2.6 \
+                      chromadb==1.1.0 \
+                      sentence-transformers==5.1.1 \
+                      pydantic==2.11.9
 
-      #  Crawler 실행
       - name: Run crawler
         env:
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: python crawler.py
 
-      #  MD → TXT 변환
       - name: Convert MD → TXT
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         run: python txt_transfer.py
 
-      #  Vector DB 생성
       - name: Build Vector DB
-        env:
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         run: python vector_store.py
-
-      #  결과 GitHub에 자동 푸시
-      - name: Commit and push crawl results
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          git config --global user.name "github-actions"
-          git config --global user.email "github-actions@github.com"
-          git add result_files/ metadata.xlsx
-          git commit -m "Auto update crawl results" || echo "No changes to commit"
-          git push "https://x-access-token:${GITHUB_TOKEN}@github.com/${{ github.repository }}.git"
