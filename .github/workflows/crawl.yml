@@ -1,36 +1,46 @@
-name: Auto Crawl SW Notice
+name: Auto Crawl & Vector DB
 
 on:
   schedule:
-    - cron: '0 0 * * *'   # 매일 00:00 UTC (한국 시간 오전 9시)
+    - cron: '0 0 * * *'   # 매일 00:00 UTC (한국 시간 09:00)
   workflow_dispatch:       # 수동 실행 가능
 
 jobs:
-  crawl:
+  crawl_vector:
     runs-on: ubuntu-latest
 
     steps:
+      #  Repo checkout
       - name: Checkout repo
         uses: actions/checkout@v4
 
-      - name: Set up Python
+      #  Python 세팅
+      - name: Setup Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.10'
 
+      #  라이브러리 설치
       - name: Install dependencies
         run: |
-          pip install selenium chromedriver-autoinstaller openpyxl
+          pip install selenium chromedriver-autoinstaller openpyxl pandas
+          pip install openai langchain langchain-huggingface langchain-chroma
 
+      #  환경 변수 설정 (OpenAI API Key)
+      - name: Set OpenAI Key
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+
+      #  Crawler 실행
       - name: Run crawler
         run: python crawler.py
 
-      - name: Commit and push crawl results
+      #  MD → TXT 변환
+      - name: Convert MD → TXT
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          git config --global user.name "github-actions"
-          git config --global user.email "github-actions@github.com"
-          git add result_files/
-          git commit -m "Auto update crawl results" || echo "No changes to commit"
-          git push "https://x-access-token:${GITHUB_TOKEN}@github.com/${{ github.repository }}.git"
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: python txt_transfer.py
+
+      #  Vector DB 생성
+      - name: Build Vector DB
+        run: python vector_store.py
