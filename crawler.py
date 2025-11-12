@@ -10,12 +10,11 @@ from selenium.webdriver.common.by import By
 import chromedriver_autoinstaller
 import subprocess
 
-
+#  파일명 정리 함수
 def sanitize_filename(name):
     return re.sub(r'[\\/*?:"<>|]', "_", name)
 
-
-# ✅ 크롬드라이버 설치 및 설정
+# 크롬드라이버 설정
 chromedriver_autoinstaller.install()
 chrome_options = Options()
 chrome_options.add_argument('--headless')
@@ -24,18 +23,17 @@ chrome_options.add_argument('--disable-dev-shm-usage')
 driver = webdriver.Chrome(service=Service(), options=chrome_options)
 driver.implicitly_wait(5)
 
-# ✅ 저장 경로 (GitHub 저장소 내부 폴더)
+# 저장 경로 설정
 save_base = './result_files'
 os.makedirs(save_base, exist_ok=True)
-
 excel_path = os.path.join(save_base, "metadata.xlsx")
 
-# ✅ 엑셀 파일 초기화 or 불러오기 (🔹 관련부서 컬럼으로 변경)
+# 엑셀 초기화 or 로드
 if not os.path.exists(excel_path):
     wb = openpyxl.Workbook()
     ws = wb.active
     ws.title = "게시글 목록"
-    ws.append(["게시글 제목", "관련부서", "작성일", "URL"])  # ✅ 컬럼명 변경
+    ws.append(["게시글 제목", "관련부서", "작성일", "URL"])
     wb.save(excel_path)
     existing_keys = set()
 else:
@@ -43,26 +41,22 @@ else:
     ws = wb.active
     existing_keys = set()
     for row in ws.iter_rows(min_row=2, values_only=True):
-        title, dept, date, *_ = row  # ✅ 기존 “작성자” → “관련부서”로 이름만 변경
-        if title and date:
-            existing_keys.add(f"{title.strip()}_{date.strip()}")
+        title, dept, date, url = row
+        if url:
+            existing_keys.add(url.strip())
     print(f"✅ 기존 게시글 {len(existing_keys)}건 로드 완료.")
 
-
-# ✅ 관련부서 통일 + URL 저장
+#  엑셀에 추가 함수
 def append_to_excel(title, dept, date, url, excel_path):
     wb = openpyxl.load_workbook(excel_path)
     ws = wb.active
     ws.append([title, dept, date, url])
     wb.save(excel_path)
 
-
-# ===============================
 # 공주대 SW중심대학 공지사항 크롤러
-# ===============================
 base_url = "https://swknu.kongju.ac.kr"
 board_url = f"{base_url}/community/notice.do?&pn=1"
-max_pages = 1  # 최대 페이지 수
+max_pages = 1  # ✅ 필요시 페이지 수 늘리기
 
 print(f"\n========== 🔍 공주대 SW중심대학 공지사항 크롤링 시작 ==========")
 
@@ -84,15 +78,12 @@ while True:
             post_url = urljoin(base_url, link_elem.get_attribute("href"))
             info_elems = item.find_elements(By.CSS_SELECTOR, ".post-info span")
 
-            # ✅ 관련부서는 고정값으로 통일
             dept = "공주대학교SW중심대학사업단"
-
-            # ✅ 작성일은 그대로 크롤링
             date = info_elems[1].text.strip() if len(info_elems) > 1 else "정보 없음"
 
-            key = f"{title}_{date}"
+            key = post_url  # ✅ URL로 중복 판단
             if key in existing_keys:
-                print(f"⏩ ({idx}) {title} ({date}) → 이미 존재, 건너뜀")
+                print(f"⏩ ({idx}) {title} → 이미 존재, 건너뜀")
                 continue
 
             print(f"📰 ({idx}) {title} ({date}) → 새 게시글 처리 중...")
@@ -100,12 +91,14 @@ while True:
             driver.get(post_url)
             time.sleep(1)
 
+            # ✅ 본문 추출
             try:
                 content_elem = driver.find_element(By.CSS_SELECTOR, ".view-note")
                 content = content_elem.text.strip()
             except:
                 content = "본문을 가져올 수 없습니다."
 
+            # ✅ 첨부파일 추출
             file_links = []
             try:
                 file_elems = driver.find_elements(By.CSS_SELECTOR, "div.post-file ul li a")
@@ -117,6 +110,7 @@ while True:
             except:
                 pass
 
+            # ✅ 마크다운 파일 생성
             safe_title = sanitize_filename(title)[:80]
             file_path = os.path.join(save_base, f"{safe_title}.md")
 
@@ -124,6 +118,7 @@ while True:
 
 **관련부서:** {dept}  
 **작성일:** {date}  
+**URL:** {post_url}  
 
 ---
 
@@ -143,7 +138,7 @@ while True:
             with open(file_path, "w", encoding="utf-8") as f:
                 f.write(markdown)
 
-            # ✅ 관련부서, URL 포함 저장
+            # ✅ 엑셀에 추가
             append_to_excel(title, dept, date, post_url, excel_path)
             existing_keys.add(key)
             print(f"✅ 저장 완료 → {file_path}")
@@ -169,7 +164,8 @@ while True:
 driver.quit()
 print("\n✅ 모든 크롤링 완료!")
 
-# ✅ GitHub에 자동 푸시
+
+# GitHub 자동 푸시
 subprocess.run(["git", "config", "--global", "user.email", "github-actions@github.com"])
 subprocess.run(["git", "config", "--global", "user.name", "github-actions"])
 subprocess.run(["git", "add", "."])
