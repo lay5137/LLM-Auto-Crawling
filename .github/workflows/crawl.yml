@@ -3,7 +3,7 @@ name: Auto Crawl & Vector DB
 on:
   schedule:
     - cron: '0 0 * * *'   # 매일 00:00 UTC (한국 시간 09:00)
-  workflow_dispatch:       # 수동 실행 가능
+  workflow_dispatch: {}       # 수동 실행 가능
 
 jobs:
   crawl_vector:
