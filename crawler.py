@@ -28,7 +28,7 @@ driver.implicitly_wait(5)
 save_base = './result_files'
 os.makedirs(save_base, exist_ok=True)
 
-excel_path = os.path.join(save_base, "crawl_result.xlsx")
+excel_path = os.path.join(save_base, "metadata.xlsx")
 
 # ✅ 엑셀 파일 초기화 or 불러오기 (🔹 관련부서 컬럼으로 변경)
 if not os.path.exists(excel_path):
