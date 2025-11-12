@@ -10,6 +10,7 @@ from langchain_text_splitters import CharacterTextSplitter
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_community.document_loaders import TextLoader
 from langchain_chroma import Chroma
+import subprocess
 
 # =============================================
 # 📌 경로 설정
@@ -105,3 +106,9 @@ for filename in os.listdir(docs_folder):
 
 print(f"\n🎉 총 {file_count}개 txt 문서를 벡터 DB에 저장 완료! (테스트용)")
 print(f"📁 DB 경로: {db_path}")
+
+subprocess.run(["git", "config", "--global", "user.email", "github-actions@github.com"])
+subprocess.run(["git", "config", "--global", "user.name", "github-actions"])
+subprocess.run(["git", "add", "chroma_db"])
+subprocess.run(["git", "commit", "-m", "Auto update vector DB"])
+subprocess.run(["git", "push"])
