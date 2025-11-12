@@ -10,11 +10,13 @@ from selenium.webdriver.common.by import By
 import chromedriver_autoinstaller
 import subprocess
 
-#  파일명 정리 함수
+
+# ✅ 파일명 정리 함수
 def sanitize_filename(name):
     return re.sub(r'[\\/*?:"<>|]', "_", name)
 
-# 크롬드라이버 설정
+
+# ✅ 크롬드라이버 설정
 chromedriver_autoinstaller.install()
 chrome_options = Options()
 chrome_options.add_argument('--headless')
@@ -23,12 +25,14 @@ chrome_options.add_argument('--disable-dev-shm-usage')
 driver = webdriver.Chrome(service=Service(), options=chrome_options)
 driver.implicitly_wait(5)
 
-# 저장 경로 설정
+
+# ✅ 저장 경로 설정
 save_base = './result_files'
 os.makedirs(save_base, exist_ok=True)
 excel_path = os.path.join(save_base, "metadata.xlsx")
 
-# 엑셀 초기화 or 로드
+
+# ✅ 엑셀 초기화 or 로드
 if not os.path.exists(excel_path):
     wb = openpyxl.Workbook()
     ws = wb.active
@@ -46,14 +50,28 @@ else:
             existing_keys.add(url.strip())
     print(f"✅ 기존 게시글 {len(existing_keys)}건 로드 완료.")
 
-#  엑셀에 추가 함수
+
+# ✅ 엑셀에 데이터 추가 (공백행 무시하고 마지막 행 이후에 추가)
 def append_to_excel(title, dept, date, url, excel_path):
     wb = openpyxl.load_workbook(excel_path)
     ws = wb.active
-    ws.append([title, dept, date, url])
+
+    # 실제 데이터가 있는 마지막 행 찾기
+    last_row = 1
+    for row in range(ws.max_row, 0, -1):
+        if any(cell.value for cell in ws[row]):  # 값이 하나라도 있는 행
+            last_row = row
+            break
+
+    ws.cell(row=last_row + 1, column=1, value=title)
+    ws.cell(row=last_row + 1, column=2, value=dept)
+    ws.cell(row=last_row + 1, column=3, value=date)
+    ws.cell(row=last_row + 1, column=4, value=url)
+
     wb.save(excel_path)
 
-# 공주대 SW중심대학 공지사항 크롤러
+
+# ✅ 공주대 SW중심대학 공지사항 크롤러
 base_url = "https://swknu.kongju.ac.kr"
 board_url = f"{base_url}/community/notice.do?&pn=1"
 max_pages = 1  # ✅ 필요시 페이지 수 늘리기
@@ -81,8 +99,8 @@ while True:
             dept = "공주대학교SW중심대학사업단"
             date = info_elems[1].text.strip() if len(info_elems) > 1 else "정보 없음"
 
-            key = post_url  # ✅ URL로 중복 판단
-            if key in existing_keys:
+            # ✅ URL로 중복 판단
+            if post_url in existing_keys:
                 print(f"⏩ ({idx}) {title} → 이미 존재, 건너뜀")
                 continue
 
@@ -140,7 +158,7 @@ while True:
 
             # ✅ 엑셀에 추가
             append_to_excel(title, dept, date, post_url, excel_path)
-            existing_keys.add(key)
+            existing_keys.add(post_url)
             print(f"✅ 저장 완료 → {file_path}")
 
             driver.back()
@@ -150,6 +168,7 @@ while True:
             print(f"❗ 게시글 처리 실패: {e}")
             continue
 
+    # ✅ 다음 페이지 이동
     try:
         next_page = driver.find_element(By.CSS_SELECTOR, f"a[href*='pn={page_num+1}']")
         driver.get(next_page.get_attribute("href"))
@@ -165,7 +184,7 @@ driver.quit()
 print("\n✅ 모든 크롤링 완료!")
 
 
-# GitHub 자동 푸시
+# ✅ GitHub 자동 푸시
 subprocess.run(["git", "config", "--global", "user.email", "github-actions@github.com"])
 subprocess.run(["git", "config", "--global", "user.name", "github-actions"])
 subprocess.run(["git", "add", "."])
