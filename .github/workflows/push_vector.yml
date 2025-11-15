@@ -1,0 +1,24 @@
+name: Manual Push Vector DB
+
+on:
+  workflow_dispatch:  # 수동 실행 전용
+
+jobs:
+  push_vector:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Push Vector DB
+        env:
+          TARGET_REPO_PAT: ${{ secrets.TARGET_REPO_PAT }}
+          TARGET_REPO: "KNUckle-llm/chatbot"
+          TARGET_BRANCH: "14-feature-auto-embedding"
+        run: python src/agent/push_vector.py
