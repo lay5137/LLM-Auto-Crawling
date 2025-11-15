@@ -1,5 +1,5 @@
 # =============================================
-# 📘 TXT → Chroma 벡터 DB 저장
+# 📘 TXT → Chroma 벡터 DB 저장 (chatbot_20251108 폴더)
 # =============================================
 import os
 import re
@@ -17,12 +17,17 @@ import subprocess
 # =============================================
 docs_folder = "./result_txt"
 metadata_file = "./result_files/metadata.xlsx"
-db_path = "./chroma_db"
 
-# 기존 DB 삭제
+# 📌 벡터DB 폴더명은 유지!!!
+db_path = "./chatbot_20251108"
+
+# =============================================
+# 📌 기존 DB 삭제 후 새로 생성
+# =============================================
 if os.path.exists(db_path):
     shutil.rmtree(db_path)
     print("🗑️ 기존 DB 삭제 완료")
+
 os.makedirs(db_path, exist_ok=True)
 print(f"📁 새 DB 생성: {db_path}")
 
@@ -57,6 +62,7 @@ def safe_search_key(name):
 # 📌 메타데이터 로드
 # =============================================
 metadata_df = pd.read_excel(metadata_file)
+
 metadata_dict = {}
 for _, row in metadata_df.iterrows():
     orig = unicodedata.normalize('NFC', str(row["게시글 제목"]).strip())
@@ -70,9 +76,10 @@ for _, row in metadata_df.iterrows():
     metadata_dict[safe_search_key(orig)] = meta
 
 # =============================================
-# 📌 TXT 로드 및 DB 추가
+# 📌 TXT 로드 → embed → DB 저장
 # =============================================
 file_count = 0
+
 for filename in os.listdir(docs_folder):
     if not filename.endswith(".txt"):
         continue
@@ -88,6 +95,7 @@ for filename in os.listdir(docs_folder):
     try:
         loader = TextLoader(os.path.join(docs_folder, filename), encoding="utf-8")
         documents = loader.load_and_split(text_splitter=text_splitter)
+
         for doc in documents:
             doc.metadata.update(meta)
 
@@ -97,13 +105,29 @@ for filename in os.listdir(docs_folder):
         print(f"✅ {filename} 추가 완료 ({len(documents)}개 청크)")
 
     except Exception as e:
-        print(f"⚠️ {filename} 처리 중 오류 발생: {e}")
+        print(f"⚠️ {filename} 처리 중 오류: {e}")
 
 print(f"\n🎉 총 {file_count}개 txt 문서를 벡터 DB에 저장 완료!")
 print(f"📁 DB 경로: {db_path}")
 
+# =============================================
+# 📌 Git Push (PAT로 B레포지토리에 push)
+# =============================================
+target_repo = os.getenv("TARGET_REPO")
+pat = os.getenv("TARGET_REPO_PAT")
+
+if not target_repo or not pat:
+    print("⚠️ target_repo 또는 PAT가 설정되지 않음. push 스킵")
+    exit(0)
+
+remote_url = f"https://{pat}@github.com/{target_repo}.git"
+
 subprocess.run(["git", "config", "--global", "user.email", "github-actions@github.com"])
 subprocess.run(["git", "config", "--global", "user.name", "github-actions"])
-subprocess.run(["git", "add", "chroma_db"])
-subprocess.run(["git", "commit", "-m", "Auto update vector DB"])
-subprocess.run(["git", "push"])
+
+# 실제 vector DB 경로
+subprocess.run(["git", "add", "src/agent/chatbot_20251108"])
+subprocess.run(["git", "commit", "-m", "Auto update vector DB"], check=False)
+
+# 해당 브랜치로 push
+subprocess.run(["git", "push", remote_url, "HEAD:14-feature-auto-embedding"])
