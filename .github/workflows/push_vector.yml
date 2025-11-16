@@ -2,7 +2,7 @@ name: Manual Push Vector DB
 
 on:
   schedule:
-    - cron: '0 1 * * *'  # 매일 01:00에 자동 실행
+    #- cron: '0 1 * * *'  # 매일 01:00에 자동 실행
   workflow_dispatch:  # 수동 실행 전용
 
 jobs:
