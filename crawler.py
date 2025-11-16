@@ -182,6 +182,13 @@ while True:
 driver.quit()
 print("\n✅ 모든 크롤링 완료!")
 
+# ✅ GitHub 자동 푸시
+subprocess.run(["git", "config", "--global", "user.email", "github-actions@github.com"])
+subprocess.run(["git", "config", "--global", "user.name", "github-actions"])
+subprocess.run(["git", "add", "."])
+subprocess.run(["git", "commit", "-m", "Auto update crawl results"])
+subprocess.run(["git", "push"])
+
 # -------------------
 # 🔔 새 게시글 있으면 flag 생성
 # -------------------
