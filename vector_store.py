@@ -7,6 +7,7 @@ from langchain_text_splitters import CharacterTextSplitter
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_community.document_loaders import TextLoader
 from langchain_chroma import Chroma
+import subprocess
 
 flag_path = "./result_files/new_updates.flag"
 
@@ -22,7 +23,7 @@ else:
 # -------------------
 docs_folder = "./result_txt"
 metadata_file = "./result_files/metadata.xlsx"
-db_path = "./chroma_db"   # 유지
+db_path = "./chatbot_20251108"  # 폴더명 유지
 
 # -------------------
 # 기존 DB 삭제 후 새 생성
@@ -34,17 +35,23 @@ os.makedirs(db_path, exist_ok=True)
 print(f"📁 새 DB 생성: {db_path}")
 
 # -------------------
-# 벡터 DB 생성
+# 텍스트 분할
 # -------------------
 text_splitter = CharacterTextSplitter(chunk_size=1000, chunk_overlap=100, separator="\n")
 hf_embeddings = HuggingFaceEmbeddings(model_name="BAAI/bge-m3")
 db = Chroma(persist_directory=db_path, embedding_function=hf_embeddings)
 
+# -------------------
+# 파일명 변환
+# -------------------
 def safe_search_key(name):
     name = re.sub(r'[<>:"/\\|?*]', "_", name)
     name = name.replace(" ", "_")
     return name
 
+# -------------------
+# 메타데이터 로드
+# -------------------
 metadata_df = pd.read_excel(metadata_file)
 metadata_dict = {}
 for _, row in metadata_df.iterrows():
@@ -59,7 +66,7 @@ for _, row in metadata_df.iterrows():
     metadata_dict[safe_search_key(orig)] = meta
 
 # -------------------
-# TXT → Vector DB
+# TXT → DB 저장
 # -------------------
 file_count = 0
 for filename in os.listdir(docs_folder):
@@ -71,19 +78,41 @@ for filename in os.listdir(docs_folder):
     if meta is None:
         print(f"⚠️ {filename} 메타데이터 없음 → 건너뜀")
         continue
-
     try:
         loader = TextLoader(os.path.join(docs_folder, filename), encoding="utf-8")
         documents = loader.load_and_split(text_splitter=text_splitter)
         for doc in documents:
             doc.metadata.update(meta)
-
         db.add_documents(documents)
         file_count += 1
         print(f"✅ {filename} 추가 완료 ({len(documents)}개 청크)")
-
     except Exception as e:
         print(f"⚠️ {filename} 처리 중 오류: {e}")
 
 print(f"\n🎉 총 {file_count}개 txt 문서를 벡터 DB에 저장 완료!")
 print(f"📁 DB 경로: {db_path}")
+
+# -------------------
+# Git Push
+# -------------------
+target_repo = os.getenv("TARGET_REPO")          # ex: "KNUckle-llm/chatbot"
+pat = os.getenv("TARGET_REPO_PAT")
+
+if not target_repo or not pat:
+    print("⚠️ target_repo 또는 PAT가 설정되지 않음. push 스킵")
+    exit(0)
+
+remote_url = f"https://{pat}@github.com/{target_repo}.git"
+subprocess.run(["git", "config", "--global", "user.email", "github-actions@github.com"])
+subprocess.run(["git", "config", "--global", "user.name", "github-actions"])
+
+subprocess.run(["git", "add", "src/agent/chatbot_20251108"])
+subprocess.run(["git", "commit", "-m", "Auto update vector DB"], check=False)
+subprocess.run(["git", "push", remote_url, "HEAD:14-feature-auto-embedding"])
+
+# -------------------
+# flag 삭제
+# -------------------
+if os.path.exists(flag_path):
+    os.remove(flag_path)
+    print("🧹 플래그 삭제 완료 (임베딩 완료)")
