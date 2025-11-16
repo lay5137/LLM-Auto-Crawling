@@ -28,6 +28,7 @@ if not target_repo or not pat:
 
 remote_url = f"https://{pat}@github.com/{target_repo}.git"
 
+
 # -------------------
 # temp 디렉토리 준비
 # -------------------
@@ -45,23 +46,10 @@ subprocess.run(["git", "config", "user.name", "GitHub Actions"], cwd=clone_path)
 # 브랜치 체크아웃
 subprocess.run(["git", "checkout", "-B", branch], cwd=clone_path, check=True)
 
-# -------------------
-# chroma_db → clone repo의 지정 경로로 복사
-# -------------------
-src_db = "chroma_db"
-dst_folder = os.path.join(clone_path, "src/agent/chatbot_20251108")
-
-if os.path.exists(dst_folder):
-    shutil.rmtree(dst_folder)
-shutil.copytree(src_db, dst_folder)
-
-print(f"📁 DB 복사 완료: {src_db} → {dst_folder}")
 
 # -------------------
-# Git add, commit, push
+# 🚀 먼저 원격 최신 버전 가져오기
 # -------------------
-
-# push 전에 원격 최신 내용 가져오기
 print("🔄 원격 브랜치 pull --rebase 진행 중...")
 pull_result = subprocess.run(
     ["git", "pull", "--rebase", "origin", branch],
@@ -73,10 +61,25 @@ pull_result = subprocess.run(
 if pull_result.returncode != 0:
     print("⚠️ pull --rebase 실패")
     print(pull_result.stderr)
-    # 그래도 계속 진행해도 되지만 안전하게 종료
     exit(1)
 
-# add & commit
+
+# -------------------
+# chroma_db → clone repo의 지정 경로로 복사
+# -------------------
+src_db = "chroma_db"
+dst_folder = os.path.join(clone_path, "src/agent/chatbot_20251108")
+
+if os.path.exists(dst_folder):
+    shutil.rmtree(dst_folder)
+
+shutil.copytree(src_db, dst_folder)
+print(f"📁 DB 복사 완료: {src_db} → {dst_folder}")
+
+
+# -------------------
+# Git add, commit
+# -------------------
 subprocess.run(["git", "add", "."], cwd=clone_path)
 
 commit_result = subprocess.run(
@@ -92,7 +95,10 @@ if "nothing to commit" in commit_result.stdout:
     print("🧹 flag 삭제 완료")
     exit(0)
 
-# push
+
+# -------------------
+# Push
+# -------------------
 push_result = subprocess.run(
     ["git", "push", "origin", branch],
     cwd=clone_path,
@@ -107,6 +113,6 @@ if push_result.returncode != 0:
 
 print(f"✅ push 완료! → {target_repo}:{branch}")
 
-# 성공적 push → flag 삭제
+# 성공 → flag 삭제
 os.remove(flag_path)
 print("🧹 push 성공 → flag 삭제 완료")
