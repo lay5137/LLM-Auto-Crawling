@@ -60,7 +60,25 @@ print(f"📁 DB 복사 완료: {src_db} → {dst_folder}")
 # -------------------
 # Git add, commit, push
 # -------------------
+
+# push 전에 원격 최신 내용 가져오기
+print("🔄 원격 브랜치 pull --rebase 진행 중...")
+pull_result = subprocess.run(
+    ["git", "pull", "--rebase", "origin", branch],
+    cwd=clone_path,
+    text=True,
+    capture_output=True
+)
+
+if pull_result.returncode != 0:
+    print("⚠️ pull --rebase 실패")
+    print(pull_result.stderr)
+    # 그래도 계속 진행해도 되지만 안전하게 종료
+    exit(1)
+
+# add & commit
 subprocess.run(["git", "add", "."], cwd=clone_path)
+
 commit_result = subprocess.run(
     ["git", "commit", "-m", "Auto push vector DB"],
     cwd=clone_path,
@@ -70,11 +88,11 @@ commit_result = subprocess.run(
 
 if "nothing to commit" in commit_result.stdout:
     print("변경 사항 없음 → push 생략")
-    # flag 삭제 (임베딩되었지만 DB 변화는 없었던 경우도 포함)
     os.remove(flag_path)
     print("🧹 flag 삭제 완료")
     exit(0)
 
+# push
 push_result = subprocess.run(
     ["git", "push", "origin", branch],
     cwd=clone_path,
@@ -89,6 +107,6 @@ if push_result.returncode != 0:
 
 print(f"✅ push 완료! → {target_repo}:{branch}")
 
-# push 성공 → flag 삭제
+# 성공적 push → flag 삭제
 os.remove(flag_path)
 print("🧹 push 성공 → flag 삭제 완료")
