@@ -46,10 +46,3 @@ jobs:
 
       - name: Build Vector DB
         run: python vector_store.py
-
-      - name: Push Vector DB to LLM Repo
-        env:
-          TARGET_REPO_PAT: ${{ secrets.TARGET_REPO_PAT }}
-          TARGET_REPO: "KNUckle-llm/chatbot"
-          TARGET_BRANCH: "14-feature-auto-embedding"
-        run: python src/agent/push_vector.py

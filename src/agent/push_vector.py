@@ -2,19 +2,6 @@ import os
 import shutil
 import subprocess
 
-# flag 파일 경로
-flag_path = "./result_files/new_updates.flag"
-
-# -------------------
-# flag 체크
-# -------------------
-if not os.path.exists(flag_path):
-    print("📌 새로운 데이터 없음 → push 스킵")
-    exit(0)
-else:
-    print("🚩 새로운 데이터 감지 → push 진행")
-
-
 # -------------------
 # GitHub PAT & 레포지토리
 # -------------------
@@ -23,11 +10,10 @@ pat = os.getenv("TARGET_REPO_PAT")
 branch = os.getenv("TARGET_BRANCH", "14-feature-auto-embedding")
 
 if not target_repo or not pat:
-    print("⚠️ target_repo 또는 PAT 미설정. push 스킵")
+    print("⚠️ target_repo 또는 PAT가 설정되지 않음. push 스킵")
     exit(0)
 
 remote_url = f"https://{pat}@github.com/{target_repo}.git"
-
 
 # -------------------
 # temp 디렉토리 준비
@@ -39,51 +25,31 @@ if os.path.exists(clone_path):
 print(f"📥 cloning target repo: {remote_url} ...")
 subprocess.run(["git", "clone", remote_url, clone_path], check=True)
 
-# Git config
+# Git config (로컬 repo 기준으로 설정)
 subprocess.run(["git", "config", "user.email", "github-actions@github.com"], cwd=clone_path)
 subprocess.run(["git", "config", "user.name", "GitHub Actions"], cwd=clone_path)
 
-# 브랜치 체크아웃
+# 브랜치 체크아웃 (없으면 생성)
 subprocess.run(["git", "checkout", "-B", branch], cwd=clone_path, check=True)
 
-
 # -------------------
-# 🚀 먼저 원격 최신 버전 가져오기
-# -------------------
-print("🔄 원격 브랜치 pull --rebase 진행 중...")
-pull_result = subprocess.run(
-    ["git", "pull", "--rebase", "origin", branch],
-    cwd=clone_path,
-    text=True,
-    capture_output=True
-)
-
-if pull_result.returncode != 0:
-    print("⚠️ pull --rebase 실패")
-    print(pull_result.stderr)
-    exit(1)
-
-
-# -------------------
-# chroma_db → clone repo의 지정 경로로 복사
+# chroma_db → clone repo의 지정된 경로로 복사
 # -------------------
 src_db = "chroma_db"
 dst_folder = os.path.join(clone_path, "src/agent/chatbot_20251108")
 
 if os.path.exists(dst_folder):
     shutil.rmtree(dst_folder)
-
 shutil.copytree(src_db, dst_folder)
+
 print(f"📁 DB 복사 완료: {src_db} → {dst_folder}")
 
-
 # -------------------
-# Git add, commit
+# Git add, commit, push
 # -------------------
 subprocess.run(["git", "add", "."], cwd=clone_path)
-
 commit_result = subprocess.run(
-    ["git", "commit", "-m", "Auto push vector DB"],
+    ["git", "commit", "-m", "Manual push vector DB"],
     cwd=clone_path,
     text=True,
     capture_output=True
@@ -91,14 +57,8 @@ commit_result = subprocess.run(
 
 if "nothing to commit" in commit_result.stdout:
     print("변경 사항 없음 → push 생략")
-    os.remove(flag_path)
-    print("🧹 flag 삭제 완료")
     exit(0)
 
-
-# -------------------
-# Push
-# -------------------
 push_result = subprocess.run(
     ["git", "push", "origin", branch],
     cwd=clone_path,
@@ -107,12 +67,8 @@ push_result = subprocess.run(
 )
 
 if push_result.returncode != 0:
-    print("❌ Push 실패")
+    print("Push 실패:")
     print(push_result.stderr)
     exit(1)
 
 print(f"✅ push 완료! → {target_repo}:{branch}")
-
-# 성공 → flag 삭제
-os.remove(flag_path)
-print("🧹 push 성공 → flag 삭제 완료")
