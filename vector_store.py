@@ -86,11 +86,6 @@ for filename in os.listdir(docs_folder):
     if not filename.endswith(".txt"):
         continue
 
-    # 🟡 최대 3개 문서만 임베딩
-    if file_count >= 3:
-        print("⏹️ 3개 문서까지만 임베딩 진행 (테스트용)")
-        break
-
     base_name = unicodedata.normalize('NFC', os.path.splitext(filename)[0].strip())
     safe_key_name = safe_search_key(base_name)
 
@@ -113,7 +108,7 @@ for filename in os.listdir(docs_folder):
     except Exception as e:
         print(f"⚠️ {filename} 처리 중 오류 발생: {e}")
 
-print(f"\n🎉 총 {file_count}개 txt 문서를 벡터 DB에 저장 완료! (테스트용)")
+print(f"\n🎉 총 {file_count}개 txt 문서를 벡터 DB에 저장 완료!")
 print(f"📁 DB 경로: {db_path}")
 
 subprocess.run(["git", "config", "--global", "user.email", "github-actions@github.com"])
