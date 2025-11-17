@@ -5,6 +5,7 @@
 import os
 import time
 from openai import OpenAI
+import subprocess
 
 # ============================================
 # 📌 경로 설정 (Actions 환경)
@@ -70,6 +71,13 @@ for filename in os.listdir(md_folder):
 
         file_count += 1
         print(f"✅ {filename} → {base_name}.txt 저장 완료")
+
+# ✅ GitHub 자동 푸시
+subprocess.run(["git", "config", "--global", "user.email", "github-actions@github.com"])
+subprocess.run(["git", "config", "--global", "user.name", "github-actions"])
+subprocess.run(["git", "add", "."])
+subprocess.run(["git", "commit", "-m", "Auto update crawl results"])
+subprocess.run(["git", "push"])
 
 print(f"\n🎉 총 {file_count}개 md 문서를 txt로 변환 완료!")
 print(f"📁 저장 경로: {txt_folder}")
