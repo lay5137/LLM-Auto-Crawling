@@ -22,5 +22,5 @@ jobs:
         env:
           TARGET_REPO_PAT: ${{ secrets.TARGET_REPO_PAT }}
           TARGET_REPO: "KNUckle-llm/chatbot"
-          TARGET_BRANCH: "14-feature-auto-embedding"
-        run: python src/agent/push_vector.py
+          TARGET_BRANCH: "main"
+        run: python push_vector.py

@@ -7,7 +7,7 @@ import subprocess
 # -------------------
 target_repo = os.getenv("TARGET_REPO")  # 예: KNUckle-llm/chatbot
 pat = os.getenv("TARGET_REPO_PAT")
-branch = os.getenv("TARGET_BRANCH", "14-feature-auto-embedding")
+branch = os.getenv("TARGET_BRANCH", "main")
 
 if not target_repo or not pat:
     print("⚠️ target_repo 또는 PAT가 설정되지 않음. push 스킵")
@@ -36,7 +36,7 @@ subprocess.run(["git", "checkout", "-B", branch], cwd=clone_path, check=True)
 # chroma_db → clone repo의 지정된 경로로 복사
 # -------------------
 src_db = "chroma_db"
-dst_folder = os.path.join(clone_path, "src/agent/chatbot_20251108")
+dst_folder = os.path.join(clone_path, "src/agent/chatbot_db")
 
 if os.path.exists(dst_folder):
     shutil.rmtree(dst_folder)
