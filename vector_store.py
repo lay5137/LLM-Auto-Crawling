@@ -11,7 +11,6 @@ from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_community.document_loaders import TextLoader
 from langchain_chroma import Chroma
 import subprocess
-import traceback
 
 flag_path = "./result_files/new_updates.flag"
 
@@ -115,32 +114,12 @@ print(f"📁 DB 경로: {db_path}")
 # -------------------
 # flag 삭제
 # -------------------
-# 절대 경로로 변환 (Actions 환경에서 경로 혼동 방지)
-flag_path_abs = os.path.abspath(flag_path)
-print(f"Attempting to remove flag: {flag_path_abs}")
-
-try:
-    # 디렉터리 내용 확인(디버그)
-    try:
-        print("Current working dir:", os.getcwd())
-        if os.path.isdir(os.path.dirname(flag_path_abs)):
-            print("Directory listing:", os.listdir(os.path.dirname(flag_path_abs)))
-        else:
-            print("Flag directory does not exist:", os.path.dirname(flag_path_abs))
-    except Exception as e:
-        print("Failed to list flag directory:", e)
-
-    if os.path.exists(flag_path_abs):
-        os.remove(flag_path_abs)
-        print("🧹 플래그 삭제 완료 (임베딩 완료)")
-    else:
-        print("플래그가 존재하지 않음 → 이미 삭제되었거나 경로 불일치")
-except Exception as e:
-    print("⚠️ 플래그 삭제 중 예외 발생:", e)
-    traceback.print_exc()
+if os.path.exists(flag_path):
+    os.remove(flag_path)
+    print("🧹 플래그 삭제 완료 (임베딩 완료)")
 
 subprocess.run(["git", "config", "--global", "user.email", "github-actions@github.com"])
 subprocess.run(["git", "config", "--global", "user.name", "github-actions"])
-subprocess.run(["git", "add", "chroma_db"])
+subprocess.run(["git", "add", "."])
 subprocess.run(["git", "commit", "-m", "Auto update vector DB"])
 subprocess.run(["git", "push"])
