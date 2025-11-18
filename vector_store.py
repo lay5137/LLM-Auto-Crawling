@@ -111,15 +111,15 @@ for filename in os.listdir(docs_folder):
 print(f"\n🎉 총 {file_count}개 txt 문서를 벡터 DB에 저장 완료!")
 print(f"📁 DB 경로: {db_path}")
 
-subprocess.run(["git", "config", "--global", "user.email", "github-actions@github.com"])
-subprocess.run(["git", "config", "--global", "user.name", "github-actions"])
-subprocess.run(["git", "add", "chroma_db"])
-subprocess.run(["git", "commit", "-m", "Auto update vector DB"])
-subprocess.run(["git", "push"])
-
 # -------------------
 # flag 삭제
 # -------------------
 if os.path.exists(flag_path):
     os.remove(flag_path)
     print("🧹 플래그 삭제 완료 (임베딩 완료)")
+
+subprocess.run(["git", "config", "--global", "user.email", "github-actions@github.com"])
+subprocess.run(["git", "config", "--global", "user.name", "github-actions"])
+subprocess.run(["git", "add", "chroma_db"])
+subprocess.run(["git", "commit", "-m", "Auto update vector DB"])
+subprocess.run(["git", "push"])
