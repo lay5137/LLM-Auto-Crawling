@@ -87,9 +87,6 @@ for filename in os.listdir(docs_folder):
     if not filename.endswith(".txt"):
         continue
 
-    if file_count >= 1:
-        exit(0)
-        
     base_name = unicodedata.normalize('NFC', os.path.splitext(filename)[0].strip())
     safe_key_name = safe_search_key(base_name)
 
